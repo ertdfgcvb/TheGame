@@ -37,8 +37,6 @@ void keyPressed() {
 void keyReleased() {
   if      (key == 'a') game.message(null, "toggle_axis");
   else if (key == 'i') game.message(null, "toggle_info");
-  else if (key == 't') game.message(null, "make_teams");
-  else if (key == 'r') game.message(null, "reset_teams");
 
   // testPlayer keys... just to test the testPlayer  
   // if (testPlayer != null) {
