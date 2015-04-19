@@ -28,15 +28,17 @@ class Game {
 
   private float fieldW;
   private float fieldH;
-  
+
   float scale = 1.0/6.0*4;  
 
   Game(PApplet parent, Server server) {
     this.parent = parent;
     this.server = server; // just to display some stuff (IP)
 
-    fieldW = 1920/6*4;
-    fieldH = 1080/6*4;
+    //    fieldW = 1920/6*4;
+    //    fieldH = 1080/6*4;
+    fieldW = parent.width;
+    fieldH = parent.height;
 
     players = new ArrayList();
 
@@ -60,10 +62,10 @@ class Game {
     physics.setEdges(-6, -6, fieldW+6, fieldH+6);
     physics.setEdgesRestitution(0.8);
 
-    float goalW = 4.0;
-    float goalH = 200;
+    float goalW = 4;
+    float goalH = 240;
     float poleX = 20;
-    float poleD = 10;
+    float poleD = 15;
 
     goalA = new FBox(goalW, goalH - poleX);
     goalA.setPosition(goalW/2, fieldH/2);
@@ -130,7 +132,7 @@ class Game {
 
   Player getPlayer(Client c) {
     for (Player p : players) {
-      if (c == p.client) return p;
+      if (c == p.getClient()) return p;
     }
     return null;
   }
@@ -149,11 +151,12 @@ class Game {
 
     // 1. step  
     // remove dead players:    
-    for (int i = players.size () - 1; i>0; i--) {
+    for (int i = players.size ()-1; i>=0; i--) {
       Player p = players.get(i);
+      println(i + " " + p.isAlive());
       if (!p.isAlive()) {
-        log(p.getName() + " left the game");        
-        p.getClient().stop(); // stop the client  
+        log(p.getName() + " left the game");  
+        if (p.getClient() != null) p.getClient().stop(); // stop the client              
         p.removeFromWorld();  // stop the physics
         players.remove(p);    // remove from list
       }
@@ -190,10 +193,13 @@ class Game {
       }
     } else if (gameMode == PAUSED) {
       PVector d = new PVector(fieldW/2 - ball.getX(), fieldH/2 - ball.getY());
-      d.limit(5);      
+      d.limit(15);  
+      
       ball.addImpulse(d.x, d.y);
+      ball.setDamping(2);
       if ( isGameReady() ) {
         gameMode = PLAYING;
+        ball.setDamping(1);
         overlay.show("READY!");
       }
     }
@@ -201,7 +207,7 @@ class Game {
 
   void draw(PGraphics g) {  
     g.background(255);
-    
+
     g.scale(1);
 
     // draw the field
@@ -345,13 +351,17 @@ class Game {
           log("Not initializing [" + value + "]: client already exists.");   
           return;
         }
-
+        //int cn = 0;
         for (Player pl : players) {
-          // we check against null because the player might be testPlayer (eg. has no client associated)
-          if (pl.getClient() != null && pl.getClient().ip().equals(c.ip())) {          
+
+          // TODO: fix this mess:
+          // c might be null...
+          if (c == null || pl.getClient() == null) continue;
+          if (pl.getClient()!=null && pl.getClient().ip().equals(c.ip())) {          
             pl.kill();
           }
         }
+
         addPlayer(p, c);
         log("new player added: " + value);
       } else {
@@ -427,7 +437,7 @@ class Game {
     float vx = ball.getVelocityX();
     float vy = ball.getVelocityY();
     float v = dist(vx, vy, 0, 0);
-    if (v > 10) return false;
+    if (v > 5) return false;
 
     // 2. all the players must be in their own field
     for (Player p : players) {
